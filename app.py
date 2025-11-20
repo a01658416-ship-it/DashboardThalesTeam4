@@ -3,20 +3,20 @@ import base64
 
 import streamlit as st
 
-
 def theme_css(mode: str = "auto") -> str:
     """
     Returns a <style> block that:
       - Defines light and dark color tokens with CSS variables based on Thales Blue.
       - Supports 'auto' (prefers-color-scheme), 'light', and 'dark'.
+      - Hides Streamlit Header and Footer.
     """
     
     # Colores base (Light Mode - Azul Pálido Sutil)
     light_mode_vars = """
-    --bg: #93acbbff;       /* Azul Pálido Sutil (Fondo principal) - ¡ACTUALIZADO! */
-    --bg-alt: #a9e4ffff;   /* Azul Claro pálido (Fondo secundario/Sidebar) */
+    --bg:#b1e7ff;       /* Azul Pálido Sutil (Fondo principal) */
+    --bg-alt: #6cd1ff;   /* Azul Claro pálido (Fondo secundario/Sidebar) */
     --fg: #000000ff;       /* Negro (Texto principal) */
-    --muted: #475569;      /* Gris para texto 'muted' */
+    --muted: #000000ff;      /* Gris para texto 'muted' */
     --primary: #1ebcde;    /* Azul Thales Claro (Acento) */
     --border: #6c70a3ff;   /* Borde */
     """
@@ -46,103 +46,129 @@ def theme_css(mode: str = "auto") -> str:
     elif mode == "dark":
         initial_vars = dark_mode_vars
     
-    # Nota: Si el modo es "light", usamos los valores por defecto (light_mode_vars)
-
     return f"""
-<style>
-:root {{
-{initial_vars}
-}}
+    <style>
+    :root {{
+    {initial_vars}
+    }}
 
-@media (prefers-reduced-motion: no-preference) {{
-  [data-testid="stAppViewContainer"],
-  [data-testid="stSidebar"] {{
-    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-  }}
-}}
+    @media (prefers-reduced-motion: no-preference) {{
+      [data-testid="stAppViewContainer"],
+      [data-testid="stSidebar"] {{
+        transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+      }}
+    }}
 
-{auto_dark_css}
+    {auto_dark_css}
 
-/* Main content area */
-[data-testid="stAppViewContainer"],
-.block-container {{
-  background-color: var(--bg);
-  color: var(--fg);
-}}
+    /* =========================================
+       OCULTAR ELEMENTOS DE STREAMLIT (HEADER/FOOTER)
+       ========================================= */
+    
+    /* Ocultar Header (Barra superior con menú hamburguesa y 'Deploy') */
+    header[data-testid="stHeader"] {{
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border-bottom: none !important;
+        /* Si quieres que desaparezca y el contenido suba, descomenta la linea de abajo: */
+        /* display: none !important; */
+    }}
 
-a, .stMarkdown a {{
-  color: var(--primary);
-}}
+    /* Ocultar Footer ('Made with Streamlit') */
+    footer {{
+        visibility: hidden;
+        display: none !important;
+    }}
+    
+    /* Ajustar el padding superior del contenido principal 
+       para aprovechar el espacio si el header es transparente/oculto */
+    .block-container {{
+        padding-top: 2rem !important;
+    }}
 
-/* Input fields (Text, Number, Selectbox, Multiselect) */
-div[data-baseweb="input"] input,
-textarea, .stTextInput input, .stNumberInput input, .stTextArea textarea,
-.stSelectbox div[role="combobox"], .stMultiSelect div[role="combobox"] {{
-  background-color: var(--bg-alt) !important;
-  color: var(--fg) !important;
-  border: 1px solid var(--border) !important;
-}}
+    /* =========================================
+       ESTILOS DE TEMA PERSONALIZADO
+       ========================================= */
 
-/* Buttons */
-.stButton > button, .stDownloadButton > button {{
-  background-color: var(--primary) !important; 
-  color: var(--fg) !important; 
-  border: 1px solid var(--primary) !important;
-  border-radius: 5px;
-  font-weight: bold;
-}}
+    /* Main content area */
+    [data-testid="stAppViewContainer"],
+    .block-container {{
+      background-color: var(--bg);
+      color: var(--fg);
+    }}
 
-.stButton > button:hover,
-[data-testid="stSidebar"] .stButton > button:hover {{
-  /* Oscurecer el primaryColor ligeramente para el hover */
-  background-color: #1693b3 !important; 
-  border-color: #1693b3 !important;
-}}
+    a, .stMarkdown a {{
+      color: var(--primary);
+    }}
 
-hr {{
-  border-color: var(--border);
-}}
+    /* Input fields (Text, Number, Selectbox, Multiselect) */
+    div[data-baseweb="input"] input,
+    textarea, .stTextInput input, .stNumberInput input, .stTextArea textarea,
+    .stSelectbox div[role="combobox"], .stMultiSelect div[role="combobox"] {{
+      background-color: var(--bg-alt) !important;
+      color: var(--fg) !important;
+      border: 1px solid var(--border) !important;
+    }}
 
-/* Sidebar styling */
-[data-testid="stSidebar"] {{
-  background-color: var(--bg-alt);
-  border-right: 1px solid var(--border);
-  color: var(--fg);
-}}
+    /* Buttons */
+    .stButton > button, .stDownloadButton > button {{
+      background-color: var(--primary) !important; 
+      color: var(--fg) !important; 
+      border: 1px solid var(--primary) !important;
+      border-radius: 5px;
+      font-weight: bold;
+    }}
 
-[data-testid="stSidebar"] * {{
-  color: var(--fg) !important;
-}}
+    .stButton > button:hover,
+    [data-testid="stSidebar"] .stButton > button:hover {{
+      background-color: #1693b3 !important; 
+      border-color: #1693b3 !important;
+    }}
 
-[data-testid="stSidebar"] a {{
-  color: var(--primary) !important;
-}}
+    hr {{
+      border-color: var(--border);
+    }}
 
-/* Sidebar Inputs */
-[data-testid="stSidebar"] .stTextInput input,
-[data-testid="stSidebar"] textarea,
-[data-testid="stSidebar"] .stSelectbox div[role="combobox"],
-[data-testid="stSidebar"] .stMultiSelect div[role="combobox"],
-[data-testid="stSidebar"] .stNumberInput input {{
-  background-color: var(--bg) !important; /* Usar el color principal del fondo en el sidebar inputs */
-  color: var(--fg) !important;
-  border: 1px solid var(--border) !important;
-}}
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {{
+      background-color: var(--bg-alt);
+      border-right: 1px solid var(--border);
+      color: var(--fg);
+    }}
 
-/* Sidebar Buttons */
-[data-testid="stSidebar"] .stButton > button,
-[data-testid="stSidebar"] .stDownloadButton > button {{
-  background-color: var(--primary) !important;
-  color: var(--fg) !important;
-  border: 1px solid var(--primary) !important;
-}}
+    [data-testid="stSidebar"] * {{
+      color: var(--fg) !important;
+    }}
 
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {{
-  color: var(--fg) !important;
-}}
-</style>
-"""
+    [data-testid="stSidebar"] a {{
+      color: var(--primary) !important;
+    }}
+
+    /* Sidebar Inputs */
+    [data-testid="stSidebar"] .stTextInput input,
+    [data-testid="stSidebar"] textarea,
+    [data-testid="stSidebar"] .stSelectbox div[role="combobox"],
+    [data-testid="stSidebar"] .stMultiSelect div[role="combobox"],
+    [data-testid="stSidebar"] .stNumberInput input {{
+      background-color: var(--bg) !important;
+      color: var(--fg) !important;
+      border: 1px solid var(--border) !important;
+    }}
+
+    /* Sidebar Buttons */
+    [data-testid="stSidebar"] .stButton > button,
+    [data-testid="stSidebar"] .stDownloadButton > button {{
+      background-color: var(--primary) !important;
+      color: var(--fg) !important;
+      border: 1px solid var(--primary) !important;
+    }}
+
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {{
+      color: var(--fg) !important;
+    }}
+    </style>
+    """
 
 # -----------------------------------------
 # Inicializar estado de sesión
