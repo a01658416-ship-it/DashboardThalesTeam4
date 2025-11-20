@@ -216,17 +216,13 @@ def clean_crime_data(df, geojson_path=None):
 # DATA LOADING
 # ============================================================================
 
-# Asegúrate de tener estos imports al inicio de tu archivo si no los tienes:
-# import duckdb
-# import os
-
 @st.cache_data
 def load_crime_data():
     """Load and clean crime data from DuckDB and local GeoJSON"""
     try:
         # 1. Definir rutas a los archivos en el root del proyecto
         db_path = "crimes_fgj.db"
-        geojson_path = "limite-de-las-alcaldias.json"
+        json_path = "limite-de-las-alcaldias.json"
 
         # 2. Validar que la base de datos exista
         if not os.path.exists(db_path):
@@ -243,11 +239,11 @@ def load_crime_data():
         df.columns = df.columns.str.strip()
         
         # 4. Validar existencia del GeoJSON
-        final_geojson_path = None
-        if os.path.exists(geojson_path):
-            final_geojson_path = geojson_path
+        final_json_path = None
+        if os.path.exists(json_path):
+            final_json_path = json_path
         else:
-            st.warning(f"Advertencia: '{geojson_path}' no encontrado.")
+            st.warning(f"Advertencia: '{json_path}' no encontrado.")
         
         # --- NEW STEP: 4.5 Pre-convert numeric columns ---
         # Check your specific column names. Common culprits are Lat/Lon or Year.
@@ -264,7 +260,7 @@ def load_crime_data():
         # -------------------------------------------------
 
         # 5. Limpiar los datos usando tu función existente
-        df = clean_crime_data(df, final_geojson_path)
+        df = clean_crime_data(df, final_json_path)
         
         return df
         
