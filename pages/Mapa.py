@@ -1,3 +1,14 @@
+#Carolina Torres Aguirre A01658416
+
+#Leonardo Ramirez Cardoso A01657266
+
+#Juan Alberto Lopez Govantes A01655112
+
+#Santiago Ulloa Flores A01571492
+
+#Emilio Adrián Gutiérrez Terrones A01654071
+
+
 import os
 #import re
 import json
@@ -15,16 +26,7 @@ from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import chi2_contingency
-
-#Carolina Torres Aguirre A01658416
-
-#Leonardo Ramirez Cardoso A01657266
-
-#Juan Alberto Lopez Govantes A01655112
-
-#Santiago Ulloa Flores A01571492
-
-#Emilio Adrián Gutiérrez Terrones A01654071
+import duckdb
 
 
 # Page configuration
@@ -214,45 +216,62 @@ def clean_crime_data(df, geojson_path=None):
 # DATA LOADING
 # ============================================================================
 
+# Asegúrate de tener estos imports al inicio de tu archivo si no los tienes:
+# import duckdb
+# import os
+
 @st.cache_data
 def load_crime_data():
-    """Load and clean crime data"""
+    """Load and clean crime data from DuckDB and local GeoJSON"""
     try:
-        # Try Downloads folder (English and Spanish)
-        downloads_path = Path.home() / "Downloads" / "carpetasFGJ_acumulado_2025_01.csv"
-        if not downloads_path.exists():
-            downloads_path = Path.home() / "Descargas" / "carpetasFGJ_acumulado_2025_01.csv"
-        
-        if not downloads_path.exists():
-            st.error(f"Archivo no encontrado. Por favor asegurese que 'carpetasFGJ_acumulado_2025_01.csv' esté en su carpeta de Descargas.")
+        # 1. Definir rutas a los archivos en el root del proyecto
+        db_path = "crimes_fgj.db"
+        geojson_path = "limite-de-las-alcaldias.json"
+
+        # 2. Validar que la base de datos exista
+        if not os.path.exists(db_path):
+            st.error(f"Base de datos '{db_path}' no encontrada en el directorio raíz.")
             return None
+
+        # 3. Conectar a DuckDB y extraer el DataFrame
+        con = duckdb.connect(db_path, read_only=True)
+        query = "SELECT * FROM crimes_raw"
+        df = con.execute(query).df()
+        con.close()
         
-        # Read CSV with proper encoding
-        df = pd.read_csv(downloads_path, encoding='latin-1', low_memory=False)
-        
-        # Clean column names (remove spaces)
+        # Limpieza básica de nombres de columnas
         df.columns = df.columns.str.strip()
         
-        # Check if GeoJSON exists for spatial filling
-        geojson_options = [
-            Path.home() / "Downloads" / "limite-de-las-alcaldias.json",
-            Path.home() / "Descargas" / "limite-de-las-alcaldias.json",
-            "limite-de-las-alcaldias.json"
-        ]
+        # 4. Validar existencia del GeoJSON
+        final_geojson_path = None
+        if os.path.exists(geojson_path):
+            final_geojson_path = geojson_path
+        else:
+            st.warning(f"Advertencia: '{geojson_path}' no encontrado.")
         
-        geojson_path = None
-        for path in geojson_options:
-            if os.path.exists(path):
-                geojson_path = str(path)
-                break
+        # --- NEW STEP: 4.5 Pre-convert numeric columns ---
+        # Check your specific column names. Common culprits are Lat/Lon or Year.
+        # This forces strings to numbers, turning errors into NaN (Not a Number)
         
-        # Clean the data
-        df = clean_crime_data(df, geojson_path)
+        cols_to_fix = ['latitud', 'longitud', 'anio_hecho'] # <--- CHANGE THESE to your actual column names
+        
+        for col in cols_to_fix:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # Drop rows where critical coordinates became NaN (optional but recommended)
+        df = df.dropna(subset=['latitud', 'longitud']) 
+        # -------------------------------------------------
+
+        # 5. Limpiar los datos usando tu función existente
+        df = clean_crime_data(df, final_geojson_path)
         
         return df
         
     except Exception as e:
         st.error(f"Error cargando datos: {e}")
+        # Helpful debugging: Print datatypes if error occurs
+        # st.write("Current Data Types:", df.dtypes) 
         return None
 
 # Load data
