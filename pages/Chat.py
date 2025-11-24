@@ -11,7 +11,7 @@ st.title("📚 Chat with your CSV — 100% Local (Ollama)")
 # ---------- Sidebar settings ----------
 with st.sidebar:
     st.header("Settings")
-    model = st.text_input("Ollama model", value="qwen3:4b",
+    model = st.text_input("Ollama model", value="phi3:latest",
                           help="Examples: llama3, llama3:8b-instruct, phi3, mistral:instruct")
     top_k = st.slider("Top-k rows as context", 1, 10, 3)
     max_rows = st.number_input("Limit rows (speed)", 100, 100000, 1000, step=100)
