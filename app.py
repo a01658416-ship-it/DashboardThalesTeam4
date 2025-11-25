@@ -274,7 +274,6 @@ with st.sidebar:
     if st.session_state.theme_mode != selected_theme:
         st.session_state.theme_mode = selected_theme
         st.rerun()
-
 # =========================================
 # INYECCIÓN DEL TEMA
 # Se inyecta DESPUÉS de que el selector actualice el estado
