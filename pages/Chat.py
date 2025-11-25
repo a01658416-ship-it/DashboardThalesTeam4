@@ -1,3 +1,4 @@
+import duckdb
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,8 +6,8 @@ import requests, json
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-st.set_page_config(page_title="Local CSV Chat (Ollama)", page_icon="📚")
-st.title("📚 Chat with your CSV — 100% Local (Ollama)")
+st.set_page_config(page_title="Local Chat (Ollama)", page_icon="📚")
+st.title("📚 Chat  — 100% Local (Ollama)")
 
 # ---------- Sidebar settings ----------
 with st.sidebar:
@@ -21,18 +22,21 @@ with st.sidebar:
         st.session_state.messages = [{"role": "assistant", "content": "New chat started!"}]
         st.rerun()
 
-# ---------- CSV upload ----------
-file = st.file_uploader("Upload a CSV to start", type=["csv"])
-if file is None:
-    st.info("Upload a CSV (e.g., students.csv, products.csv) to begin.")
-    st.stop()
 
-@st.cache_data(show_spinner=False)
-def load_df(_file, _max_rows):
-    df = pd.read_csv(_file)
-    return df.head(_max_rows).copy() if len(df) > _max_rows else df
+@st.cache_data
+def load_data():
+    try:
+        con = duckdb.connect("crimes_fgj.db", read_only=True)
+        query = "SELECT * FROM crimes_raw LiMIT 1000"
+        df = con.execute(query).df()
+        con.close()
+        return df
+    except Exception as e:
+        st.error(f"Error cargando la base de datos: {e}")
+        return pd.DataFrame()
 
-df = load_df(file, max_rows)
+
+df = load_data()
 st.success(f"Loaded {len(df):,} rows × {len(df.columns)} cols")
 st.dataframe(df.head(10), use_container_width=True)
 
